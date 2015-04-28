@@ -1,0 +1,145 @@
+#!/bin/sh
+
+pp() {
+  local fmt="$1"; shift
+  printf "\n$fmt\n" "$@"
+}
+
+trap 'ret=$?; test $ret -ne 0 && printf "failed\n\n" >&2; exit $ret' EXIT
+
+set -e
+
+if [ ! -d "$HOME/.bin/" ]; then
+  mkdir "$HOME/.bin"
+fi
+
+if [ ! -f "$HOME/.zshrc" ]; then
+  touch "$HOME/.zshrc"
+fi
+
+case "$SHELL" in
+  */zsh) : ;;
+  *)
+    pp "Changing your shell to zsh ..."
+      chsh -s "$(which zsh)"
+    ;;
+esac
+
+brew() {
+  if is_installed "$1"; then
+    if is_upgradable "$1"; then
+      pp "Upgrading %s ..." "$1"
+      command brew upgrade "$@"
+    else
+      pp "Already using the latest version of %s. Skipping ..." "$1"
+    fi
+  else
+    pp "Installing %s ..." "$1"
+    command brew install "$@"
+  fi
+}
+
+is_installed() {
+  local name="$(expand_alias "$1")"
+  command brew list -1 | grep -Fqx "$name"
+}
+
+is_upgradable() {
+  local name="$(expand_alias "$1")"
+  ! command brew outdated --quiet "$name" >/dev/null
+}
+
+tap() {
+  command brew tap "$1" 2> /dev/null
+}
+
+# TODO: add support for updating packages installed through Cask
+cask() {
+  command brew cask install "$1" 2> /dev/null
+}
+
+expand_alias() {
+  command brew info "$1" 2>/dev/null | head -1 | awk '{gsub(/:/, ""); print $1}'
+}
+
+gem() {
+  if command gem list "$1" --installed > /dev/null; then
+    pp "Updating %s ..." "$1"
+    command gem update "$1"
+  else
+    pp "Installing %s ..." "$1"
+    command gem install "$@"
+  fi
+}
+
+if ! command -v brew >/dev/null; then
+  pp "Installing Homebrew ..."
+    curl -fsS \
+      'https://raw.githubusercontent.com/Homebrew/install/master/install' | ruby
+    export PATH="/usr/local/bin:$PATH"
+else
+  pp "Homebrew already installed. Skipping ..."
+fi
+
+pp "Updating Homebrew formulas ..."
+command brew update
+
+pp "Installing Cask ..."
+tap 'caskroom/cask'
+brew 'brew-cask'
+
+pp "Installing development tools ..."
+brew 'git'
+brew 'postgres'
+tap 'jhawthorn/fzy'
+brew 'fzy'
+brew 'the_silver_searcher'
+brew 'vim'
+brew 'ctags'
+brew 'tmux'
+brew 'reattach-to-user-namespace'
+brew 'imagemagick'
+brew 'hub'
+brew 'node'
+brew 'openssl'
+command brew unlink openssl && command brew link openssl --force
+brew 'libyaml'
+
+# Nokogiri deps
+tap 'homebrew/dupes'
+brew 'libxml2'
+brew 'libxslt'
+brew 'libiconv'
+
+# Setup Terminus font
+tap 'caskroom/fonts'
+cask 'font-terminus'
+
+# Setup Ruby
+brew 'chruby'
+brew 'ruby-install'
+
+# TODO: Setup the current stable version as default
+# by writing it to $HOME/.ruby-version
+ruby-install ruby --no-reinstall
+source /usr/local/share/chruby/chruby.sh
+chruby ruby # FIXME: this probably won't select the right one if > 1
+
+# Gems
+command gem update --system
+
+gem 'bundler'
+gem 'teamocil'
+gem 'nokogiri' '-- --with-xslt-dir=/usr/local/opt/libxslt --with-xml2-include=/usr/local/opt/libxml2/include/libxml2'
+gem 'omc'
+gem 'gist'
+gem 'rubocop'
+gem 'ripper-tags'
+
+pp "Configuring Bundler ..."
+  number_of_cores=$(sysctl -n hw.ncpu)
+  bundle config --global jobs $(expr $number_of_cores - 1)
+
+if [ -f "$HOME/.laptop.local" ]; then
+  . "$HOME/.laptop.local"
+fi
