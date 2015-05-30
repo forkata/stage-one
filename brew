@@ -91,6 +91,9 @@ brew 'brew-cask'
 pp "Installing development tools ..."
 brew 'git'
 brew 'postgres'
+brew 'mysql'
+tap 'homebrew/versions'
+brew 'phantomjs182'
 tap 'jhawthorn/fzy'
 brew 'fzy'
 brew 'the_silver_searcher'
@@ -124,6 +127,10 @@ brew 'ruby-install'
 ruby-install ruby --no-reinstall
 source /usr/local/share/chruby/chruby.sh
 chruby ruby # FIXME: this probably won't select the right one if > 1
+
+# Personal tools
+pp "Installing personal packages ..."
+brew 'pass'
 
 # Gems
 command gem update --system
