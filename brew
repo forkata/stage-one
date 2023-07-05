@@ -80,19 +80,22 @@ fi
 pp "Updating Homebrew formulas..."
 command brew update
 
-pp "Installing development tools..."
+pp "Installing OS tools..."
 brew 'coreutils'
+brew 'tree'
 brew 'git'
-brew 'postgresql@13'
-brew 'mysql'
+brew 'watch'
+
 tap 'jhawthorn/fzy'
 brew 'fzy'
+brew 'fzf' # Need this for gh-branch.
+
 brew 'the_silver_searcher'
+brew 'ripgrep'
+
 brew 'vim'
-brew 'ctags'
 brew 'tmux'
-brew 'imagemagick'
-brew 'node'
+brew 'ctags'
 brew 'openssl'
 brew 'libyaml'
 
@@ -100,9 +103,23 @@ brew 'libyaml'
 brew 'libxml2'
 brew 'libxslt'
 
+pp "Installing Development tools..."
+tap 'homebrew/core'
+brew 'yarn'
+brew 'node'
+npm install -g n
+brew 'redis'
+brew 'postgresql'
+brew 'shared-mime-info'
+brew 'imagemagick'
+
 # Setup Terminus font
 tap 'homebrew/cask-fonts'
 brew 'font-terminus'
+
+# Setup Heroku CLI
+tap 'heroku/brew'
+brew 'heroku'
 
 # Setup Ruby
 brew 'chruby'
